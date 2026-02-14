@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Property Investment Decision Calculator</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background: #f6f7fb; color: #111; }
+    .wrap { max-width: 1220px; margin: 24px auto; padding: 0 16px; }
+    h1 { margin: 0 0 12px; font-size: 22px; }
+    .grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 980px) { .grid { grid-template-columns: 1.2fr 0.8fr; } }
+    .card { background: white; border-radius: 14px; padding: 14px; box-shadow: 0 8px 25px rgba(0,0,0,.06); }
+    .row { display: grid; gap: 10px; grid-template-columns: 1fr; margin-bottom: 10px; }
+    @media (min-width: 760px) { .row { grid-template-columns: repeat(3, 1fr); } }
+    label { font-size: 12px; color: #333; display: block; margin-bottom: 6px; }
+    input, select { width: 100%; box-sizing: border-box; padding: 10px 10px; border-radius: 10px; border: 1px solid #d7dbe7; background: #fff; }
+    input:focus, select:focus { outline: 2px solid #b8c3ff; border-color: #95a6ff; }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; justify-content: flex-start; width: 100%; }
+    .btns button { flex: 0 0 auto; }
+    button { padding: 6px 10px; font-size: 12px; line-height: 1.2; border-radius: 9px; border: 1px solid #d7dbe7; background: #111; color: #fff; cursor: pointer; }
+    button.secondary { background: #fff; color: #111; }
+    button { width: auto; }
+    button:active { transform: translateY(1px); }
+    .out h2 { margin: 0 0 10px; font-size: 16px; }
+    .kpi { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 760px) { .kpi { grid-template-columns: repeat(2, 1fr); } }
+    .k { padding: 12px; border-radius: 12px; background: #f3f5ff; }
+    .k .t { font-size: 12px; color: #333; }
+    .k .v { font-size: 18px; font-weight: 700; margin-top: 4px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px 6px; border-bottom: 1px solid #eceff7; font-size: 13px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    .note { font-size: 12px; color: #444; line-height: 1.4; }
+    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; background:#eef; font-size: 12px; margin-left: 6px; }
+    .sectionTitle { margin: 12px 0 8px; font-size: 13px; font-weight: 700; color:#222; }
+    .subtle { font-size: 11px; color:#566; }
+    .hr { height:1px; background:#edf0f7; margin: 10px 0; }
+    .hidden { display:none !important; }
+    .disabledSection { opacity: .60; filter: grayscale(.15); }
+  
+    @media (max-width: 480px) {
+      .wrap { margin: 12px auto; }
+      .card { padding: 12px; border-radius: 12px; }
+      h1 { font-size: 18px; line-height: 1.25; }
+      input, select { padding: 9px 9px; border-radius: 10px; }
+      .k .v { font-size: 16px; }
+      .pill { font-size: 11px; }
+      button { padding: 5px 9px; font-size: 12px; border-radius: 9px; }
+      .btns { gap: 8px; }
+    }
+
+
+    @media (min-width: 1100px) {
+      .card { padding: 16px; }
+      h1 { font-size: 24px; }
+    }
+
+
+    /* Improved Tax & CGT layout */
+    #taxSection .row {
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    @media (min-width: 760px) {
+      #taxSection .row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1100px) {
+      #taxSection .row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    #taxSection input,
+    #taxSection select {
+      padding: 11px 11px;
+    }
+
+    #taxSection .subtle {
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+
+
+    /* Tax & CGT (v5-style topline) */
+    #taxSection .taxRowTop { grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 12px; }
+    @media (max-width: 760px) {
+      #taxSection .taxRowTop { grid-template-columns: 1fr; }
+    }
+
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Property Investment Decision Calculator <span class="pill">Opportunity-cost aware</span></h1>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row taxRowTop"">
+          <div>
+            <label>Scenario</label>
+            <select id="scenario">
+              <option value="owner" selected>Owner-occupied (rent avoided)</option>
+              <option value="invest">Investment (rental income)</option>
+            </select>
+            <div class="subtle">Math is the same — only labels + tax/CGT rules change.</div>
+            <div class="subtle"><b>Tip:</b> Select <b>Investment</b> to show owners, income, tax benefit and CGT fields.</div>
+          </div>
+          <div>
+            <label>State (stamp duty)</label>
+            <select id="state">
+              <option value="NSW" selected>NSW</option>
+              <option value="VIC">VIC</option>
+              <option value="QLD">QLD</option>
+              <option value="OTHER">Other / manual</option>
+            </select>
+            <div class="subtle">Auto duty is a best-effort estimate. Always verify with your conveyancer/revenue office.</div>
+          </div>
+          <div>
+            <label style="display:flex; gap:10px; align-items:center; margin-top:20px;">
+              <input type="checkbox" id="fhb" style="width:auto;">
+              First home buyer (eligible)
+            </label>
+            <div class="subtle">Applies only when scenario is owner-occupied.</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Purchase price ($)</label>
+            <input id="price" type="number" value="" placeholder="e.g., 950000" step="1000">
+          </div>
+          <div>
+            <label>Loan amount ($)</label>
+            <input id="loan" type="number" value="" placeholder="e.g., 900000" step="1000">
+          </div>
+          <div>
+            <label>Holding period (years)</label>
+            <input id="years" type="number" value="5" step="1" min="1" max="40">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Loan interest rate (% p.a.)</label>
+            <input id="loanRate" type="number" value="5.7" step="0.01">
+          </div>
+          <div>
+            <label>Loan term (years)</label>
+            <input id="term" type="number" value="30" step="1" min="1" max="40">
+          </div>
+          <div>
+            <label>Offset balance ($) (constant)</label>
+            <input id="offset" type="number" value="" placeholder="e.g., 200000" step="1000">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Max cash for offset optimizer ($)</label>
+            <input id="maxOffset" type="number" value="200000" step="1000">
+          </div>
+          <div>
+            <label>Stamp duty ($) <span class="pill" id="dutyTag">auto</span></label>
+            <input id="stamp" type="number" value="40000" step="500">
+            <div class="subtle">If State=Other, this is used as-is. Otherwise it auto-updates (you can override).</div>
+          </div>
+          <div>
+            <label>Other upfront costs ($) (conveyancing, inspections)</label>
+            <input id="upfrontOther" type="number" value="3000" step="100">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Selling costs (agent % of sale price)</label>
+            <input id="agentPct" type="number" value="2.2" step="0.1">
+          </div>
+          <div>
+            <label>Selling legal/other fixed costs ($)</label>
+            <input id="sellFixed" type="number" value="3000" step="100">
+          </div>
+          <div>
+            <label>Sell at end of period?</label>
+            <select id="sell">
+              <option value="yes" selected>Yes (include selling costs)</option>
+              <option value="no">No (keep property)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Annual property growth (% p.a.)</label>
+            <input id="growth" type="number" value="4.4" step="0.1">
+          </div>
+          <div>
+            <label id="rentLabel">Rent avoided ($/week)</label>
+            <input id="rentWeek" type="number" value="700" step="10">
+          </div>
+          <div>
+            <label>Rent growth (% p.a.)</label>
+            <input id="rentGrowth" type="number" value="3.0" step="0.1">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Council rates ($/year)</label>
+            <input id="ratesYear" type="number" value="2800" step="50">
+          </div>
+          <div>
+            <label>Home insurance ($/year)</label>
+            <input id="insYear" type="number" value="1800" step="50">
+          </div>
+          <div>
+            <label>Maintenance & repairs ($/year)</label>
+            <input id="maintYear" type="number" value="6000" step="100">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label style="display:flex; gap:10px; align-items:center; margin-top:20px;">
+              <input type="checkbox" id="includeMaint" checked style="width:auto;">
+              Include maintenance & insurance
+            </label>
+            <div class="subtle">Turn off to see the “best case” baseline.</div>
+          </div>
+
+          <div id="invExtrasWrap">
+            <label>Vacancy allowance (% of rent)</label>
+            <input id="vacancy" type="number" value="2.0" step="0.1">
+          </div>
+
+          <div id="invExtrasWrap2">
+            <label>Property management (% of rent)</label>
+            <input id="pmPct" type="number" value="7.0" step="0.1">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Opportunity return (% p.a.)</label>
+            <input id="oppRate" type="number" value="4.7" step="0.01">
+          </div>
+          <div>
+            <label>Inflation (% p.a.)</label>
+            <input id="infl" type="number" value="2.5" step="0.1">
+          </div>
+          <div id="taxCard" class="hr"></div>
+
+        <div id="taxSection">
+          <div class="sectionTitle" style="margin-top:18px;">Tax & CGT <span class="pill">investment</span></div>
+          <div id="taxDisabledNote" class="subtle">Switch Scenario to <b>Investment</b> to enable these fields.</div>
+
+          <div class="row">
+            <div>
+              <label>Number of owners</label>
+              <select id="owners">
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                </select>
+            </div>
+            <div>
+              <label>Ownership shares (% - comma separated)</label>
+              <input id="shares" type="text" value="100" placeholder="e.g., 50,50 (for 2 owners)">
+              <div class="subtle">If blank/invalid, assumes equal shares.</div>
+            </div>
+            <div>
+              <label style="display:flex; gap:10px; align-items:center; margin-top:20px;">
+                <input type="checkbox" id="medicare" checked style="width:auto;">
+                Include Medicare levy (2%)
+              </label>
+            </div>
+          </div>
+
+          
+          <div class="row">
+            <div>
+              <label>Owner 1 income ($/year)</label>
+              <input id="income1" style="min-width:0;" type="number" value="140000" step="1000" placeholder="e.g., 140000">
+              <div class="subtle">Used to estimate tax benefit on rental loss + CGT tax (investment only). CGT is allocated by ownership share.</div>
+            </div>
+            <div id="income2Wrap" class="hidden">
+              <label>Owner 2 income ($/year)</label>
+              <input id="income2" style="min-width:0;" type="number" value="120000" step="1000" placeholder="e.g., 120000">
+              <div class="subtle">Only shown when you select 2 owners.</div>
+            </div>
+            <div>
+              <label>Building depreciation ($/year) (optional)</label>
+              <input id="deprYear" type="number" value="0" step="100">
+              <div class="subtle">Placeholder; for real numbers use a QS schedule.</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Capital improvements added to cost base ($)</label>
+              <input id="capex" type="number" value="0" step="1000">
+              <div class="subtle">Renovations that increase value; excludes regular repairs.</div>
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <input type="text" value="" disabled style="opacity:.35">
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <input type="text" value="" disabled style="opacity:.35">
+            </div>
+          </div>
+
+          </div>
+        </div>
+
+        <div class="btns">
+          <button id="calcBtn">Calculate</button>
+          <button class="secondary" id="resetBtn" title="Resets to the default values in this file">Reset to defaults</button>
+        </div>
+
+        <p class="note">
+          Monthly opportunity cost uses your corrected logic:<br/>
+          <span class="mono">(mortgage + owner costs monthly) − rent monthly</span>, invested at the opportunity rate (if positive).<br/>
+          Offset cash also has opportunity cost (invest elsewhere vs sit in offset).
+        </p>
+      </div>
+
+      <div id="sectionDivider" class="hr" style="margin: 4px 0 14px;"></div>
+      <div class="card out">
+        <h2>Results</h2>
+        <div class="kpi">
+          <div class="k"><div class="t">Monthly repayment (P&I)</div><div id="kRepay" class="v">$–</div></div>
+          <div class="k"><div class="t">Monthly interest (month 1)</div><div id="kInterest" class="v">$–</div></div>
+          <div class="k"><div class="t">Loan balance after period</div><div id="kBal" class="v">$–</div></div>
+                    <div class="k"><div class="t">Property value after period</div><div id="kEndPrice" class="v">$–</div></div>
+<div class="k"><div class="t">Equity after period (after selling costs if chosen)</div><div id="kEq" class="v">$–</div></div>
+
+          <div class="k"><div class="t">Tax benefit (rental) (holding period)</div><div id="kTax" class="v">$–</div></div>
+          <div class="k"><div class="t">CGT payable (if investment & sold)</div><div id="kCgt" class="v">$–</div></div>
+
+          <div class="k"><div class="t">Profit (with opportunity cost)</div><div id="kNom" class="v">$–</div></div>
+          <div class="k"><div class="t">Profit (no opportunity cost)</div><div id="kNomNoOpp" class="v">$–</div></div>
+<div class="k"><div class="t">Real profit (today’s $)</div><div id="kReal" class="v">$–</div></div>
+
+          <div class="k"><div class="t">Offset vs Invest advantage (period)</div><div id="kOffsetAdv" class="v">$–</div></div>
+          <div class="k"><div class="t">Best offset (optimizer)</div><div id="kBestOffset" class="v">$–</div></div>
+
+          <div class="k"><div class="t">Break-even purchase price</div><div id="kBEP" class="v">$–</div></div>
+          <div class="k"><div class="t">Break-even growth rate</div><div id="kBEG" class="v">–%</div></div>
+</div>
+
+        <div class="sectionTitle">Breakdown (your framework)</div>
+        <table>
+          <tbody id="breakdown"></tbody>
+        </table>
+
+
+        <div class="sectionTitle">Tax benefit details (investment)</div>
+        <div id="taxBreakdownWrap" class="note hidden" style="margin-top:6px;">
+          <div class="subtle">Shows year-by-year rental result and tax impact per owner (based on the incomes you entered). If totals look wrong, this will show exactly where.</div>
+          <div style="overflow:auto; border:1px solid #eceff7; border-radius:12px; margin-top:8px;">
+            <table style="min-width:760px;">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Rent</th>
+                  <th>Interest</th>
+                  <th>Other costs</th>
+                  <th>Net rent result</th>
+                  <th>Tax benefit (Owner 1)</th>
+                  <th>Tax benefit (Owner 2)</th>
+                  <th>Total tax benefit</th>
+                </tr>
+              </thead>
+              <tbody id="taxBreakdown"></tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <p class="note" style="margin-top:12px; text-align:right;">
+          Developed by <b>Dr. Sam Pitawala</b>
+        </p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const fmt0 = (n) => {
+    if (!isFinite(n)) return "–";
+    const sign = n < 0 ? "-" : "";
+    const abs = Math.abs(n);
+    return sign + "$" + abs.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  };
+  const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+
+  function pmt(rateMonthly, nper, pv) {
+    if (rateMonthly === 0) return pv / nper;
+    const r = rateMonthly;
+    return (r * pv) / (1 - Math.pow(1 + r, -nper));
+  }
+
+  // --- Stamp duty (best-effort approximations) ---
+  function dutyNSW(price) {
+    const x = price;
+    if (x <= 14000) return Math.max(10, 0.0125 * x);
+    if (x <= 32000) return 175 + 0.015 * (x - 14000);
+    if (x <= 85000) return 445 + 0.0175 * (x - 32000);
+    if (x <= 319000) return 1372 + 0.035 * (x - 85000);
+    if (x <= 1064000) return 9562 + 0.045 * (x - 319000);
+    return 43087 + 0.055 * (x - 1064000);
+  }
+
+  function dutyVICGeneral(price) {
+    const x = price;
+    if (x <= 25000) return 0.014 * x;
+    if (x <= 130000) return 350 + 0.024 * (x - 25000);
+    if (x <= 960000) return 2870 + 0.06 * (x - 130000);
+    if (x <= 2000000) return 0.055 * x;
+    return 110000 + 0.065 * (x - 2000000);
+  }
+
+  function dutyQLDStandard(price) {
+    const x = price;
+    if (x <= 5000) return 0;
+    if (x <= 75000) return 0.015 * (x - 5000);
+    if (x <= 540000) return 1050 + 0.035 * (x - 75000);
+    if (x <= 1000000) return 17325 + 0.045 * (x - 540000);
+    return 38025 + 0.0575 * (x - 1000000);
+  }
+
+  function applyFHBConcession({ state, price, dutyFull }) {
+    if (state === "NSW") {
+      if (price <= 800000) return 0;
+      if (price < 1000000) return dutyFull * ((price - 800000) / 200000);
+      return dutyFull;
+    }
+    if (state === "VIC") {
+      if (price <= 600000) return 0;
+      if (price < 750000) return dutyFull * ((price - 600000) / 150000);
+      return dutyFull;
+    }
+    return dutyFull;
+  }
+
+  function calcStampDuty({ state, price, scenario, fhb }) {
+    let dutyFull = 0;
+    if (state === "NSW") dutyFull = dutyNSW(price);
+    else if (state === "VIC") dutyFull = dutyVICGeneral(price);
+    else if (state === "QLD") dutyFull = dutyQLDStandard(price);
+    else return null;
+
+    if (scenario === "owner" && fhb) return applyFHBConcession({ state, price, dutyFull });
+    return dutyFull;
+  }
+
+  // --- Tax helpers (simple resident rates; optional 2% Medicare) ---
+  const RESIDENT_TAX_BRACKETS = [
+    { upTo: 18200, rate: 0.0, base: 0, from: 0 },
+    { upTo: 45000, rate: 0.16, base: 0, from: 18200 },
+    { upTo: 135000, rate: 0.30, base: 4288, from: 45000 },
+    { upTo: 190000, rate: 0.37, base: 31288, from: 135000 },
+    { upTo: Infinity, rate: 0.45, base: 51638, from: 190000 },
+  ];
+
+  function incomeTax(income) {
+    const x = Math.max(0, income);
+    for (const b of RESIDENT_TAX_BRACKETS) {
+      if (x <= b.upTo) return b.base + b.rate * (x - b.from);
+    }
+    return 0;
+  }
+
+  function taxWithMedicare(income, useMedicare) {
+    const t = incomeTax(income);
+    const med = useMedicare ? 0.02 * Math.max(0, income) : 0;
+    return t + med;
+  }
+
+  function parseListNums(s) {
+    if (!s) return [];
+    return s.split(",").map(t => Number(String(t).trim())).filter(v => isFinite(v));
+  }
+
+  function normalizeShares(nOwners, sharesInput) {
+    const raw = parseListNums(sharesInput);
+    let shares = raw.slice(0, nOwners);
+    if (shares.length !== nOwners || shares.some(v => v <= 0)) {
+      shares = Array.from({length:nOwners}, () => 100 / nOwners);
+    }
+    const sum = shares.reduce((a,b)=>a+b,0);
+    return shares.map(v => v / sum);
+  }
+
+  function amortizeSeries({ principal, annualRate, termYears, months, offset = 0 }) {
+    const rM = annualRate / 12;
+    const n = termYears * 12;
+    const payment = pmt(rM, n, principal);
+
+    let bal = principal;
+    let interestPaid = 0;
+    let principalPaid = 0;
+    const monthlyInterest = [];
+
+    for (let i = 0; i < months; i++) {
+      const interestBase = Math.max(0, bal - offset);
+      const interest = interestBase * rM;
+      const principalPart = Math.max(0, payment - interest);
+
+      const principalApplied = Math.min(principalPart, bal);
+      bal -= principalApplied;
+
+      interestPaid += interest;
+      principalPaid += principalApplied;
+      monthlyInterest.push(interest);
+
+      if (bal <= 0) { bal = 0; break; }
+    }
+    return { payment, balance: bal, interestPaid, principalPaid, monthlyInterest };
+  }
+
+  
+  function rentalTaxBenefit({
+    years, monthlyInterestSeries, rentWeek, rentGrowth, vacancyPct, pmPct,
+    ratesYear, insYear, maintYear, includeMaint, deprYear,
+    nOwners, shares, incomes, useMedicare
+  }) {
+    const months = years * 12;
+    let totalTaxBenefit = 0;
+    const perYear = [];
+
+    for (let y = 0; y < years; y++) {
+      const annualRent = (rentWeek * 52) * Math.pow(1 + rentGrowth, y);
+      const vac = annualRent * (vacancyPct / 100);
+      const pm = annualRent * (pmPct / 100);
+
+      const baseCosts = ratesYear + (includeMaint ? (insYear + maintYear) : 0);
+      const dep = Math.max(0, deprYear);
+
+      const interestThisYear = monthlyInterestSeries
+        .slice(y*12, Math.min((y+1)*12, months))
+        .reduce((a,b)=>a+b,0);
+
+      const otherCosts = baseCosts + dep + vac + pm;
+      const net = annualRent - (interestThisYear + otherCosts);
+
+      const ownerBenefits = [];
+      let yearTotal = 0;
+
+      for (let i = 0; i < nOwners; i++) {
+        const share = shares[i];
+        const inc0 = incomes[i] ?? incomes[0] ?? 0;
+
+        const before = taxWithMedicare(inc0, useMedicare);
+        const after = taxWithMedicare(inc0 + net * share, useMedicare);
+        const benefit = (before - after);
+
+        ownerBenefits.push(benefit);
+        yearTotal += benefit;
+        totalTaxBenefit += benefit;
+      }
+
+      perYear.push({
+        year: y + 1,
+        rent: annualRent,
+        interest: interestThisYear,
+        otherCosts: otherCosts,
+        net: net,
+        owner1: ownerBenefits[0] ?? 0,
+        owner2: ownerBenefits[1] ?? 0,
+        total: yearTotal
+      });
+    }
+
+    return { total: totalTaxBenefit, perYear };
+  }
+
+
+  function cgtPayable({
+    scenario, sell, yearsHeld,
+    purchasePrice, salePriceNet,
+    stampDuty, upfrontOther, capex,
+    nOwners, shares, incomes, useMedicare
+  }) {
+    if (scenario !== "invest") return 0;
+    if (sell !== "yes") return 0;
+
+    const costBase = purchasePrice + stampDuty + upfrontOther + Math.max(0, capex);
+    const capitalGain = salePriceNet - costBase;
+    if (capitalGain <= 0) return 0;
+
+    const discount = (yearsHeld >= 1) ? 0.50 : 0.0;
+    const taxableGain = capitalGain * (1 - discount);
+
+    let total = 0;
+    for (let i = 0; i < nOwners; i++) {
+      const share = shares[i];
+      const inc0 = incomes[i] ?? incomes[0] ?? 0;
+      const before = taxWithMedicare(inc0, useMedicare);
+      const after = taxWithMedicare(inc0 + taxableGain*share, useMedicare);
+      total += (after - before);
+    }
+    return total;
+  }
+
+  function computeScenario(params) {
+    const {
+      scenario, state, fhb,
+      price, loan, years, loanRate, term, offset,
+      stamp, upfrontOther,
+      agentPct, sellFixed, sell,
+      growth, rentWeek, rentGrowth,
+      ratesYear, insYear, maintYear, includeMaint,
+      oppRate, infl,
+      vacancy, pmPct,
+      owners, sharesInput, income1, income2, medicare, deprYear, capex
+    } = params;
+
+    const months = Math.round(years * 12);
+    const rLoan = loanRate / 100;
+    const rOpp = oppRate / 100;
+    const inflRate = infl / 100;
+
+    const am = amortizeSeries({
+      principal: loan,
+      annualRate: rLoan,
+      termYears: term,
+      months,
+      offset
+    });
+
+    const month1Interest = (am.monthlyInterest && am.monthlyInterest.length) ? am.monthlyInterest[0] : 0;
+    const totalInstalments = am.payment * months;
+
+    const salePrice = price * Math.pow(1 + growth/100, years);
+    const sellCosts = sell === "yes" ? (salePrice * (agentPct/100) + sellFixed) : 0;
+    const saleNet = salePrice - sellCosts;
+
+    const equity = (sell === "yes") ? (saleNet - am.balance) : (salePrice - am.balance);
+
+    const annualOwnerCosts = ratesYear + (includeMaint ? (insYear + maintYear) : 0);
+    const monthlyOwnerCosts = annualOwnerCosts / 12;
+
+    const rentMonthlySeries = Array.from({length: months}, (_,i) => {
+      const yearIndex = Math.floor(i/12);
+      const rw = rentWeek * Math.pow(1 + rentGrowth/100, yearIndex);
+      return (rw * 52) / 12;
+    });
+
+    const deposit = Math.max(0, price - loan);
+    const upfront = deposit + stamp + upfrontOther;
+
+    const oppGainUpfront = upfront * (Math.pow(1 + rOpp, years) - 1);
+
+    let oppGainMonthly = 0;
+    for (let i = 0; i < months; i++) {
+      const netOutflow = (am.payment + monthlyOwnerCosts) - rentMonthlySeries[i];
+      const investable = Math.max(0, netOutflow);
+      const monthsLeft = (months - i);
+      const rOppM = rOpp / 12;
+      oppGainMonthly += investable * (Math.pow(1 + rOppM, monthsLeft) - 1);
+    }
+
+    const oppCostOffset = offset * (Math.pow(1 + rOpp, years) - 1);
+
+    const nOwners = Number(owners);
+    const shares = normalizeShares(nOwners, sharesInput);
+    const incomes = [income1, income2].filter(v => isFinite(v));
+    const useMedicare = !!medicare;
+
+    let taxBenefit = 0;
+    let taxPerYear = [];
+
+    if (scenario === "invest") {
+      const taxInfo = rentalTaxBenefit({
+years,
+          monthlyInterestSeries: am.monthlyInterest,
+          rentWeek, rentGrowth: rentGrowth/100,
+          vacancyPct: vacancy,
+          pmPct,
+          ratesYear, insYear, maintYear, includeMaint,
+          deprYear,
+          nOwners, shares, incomes,
+          useMedicare
+              });
+      taxBenefit = taxInfo.total;
+      taxPerYear = taxInfo.perYear;
+    }
+
+    const cgt = cgtPayable({
+      scenario, sell, yearsHeld: years,
+      purchasePrice: price,
+      salePriceNet: saleNet,
+      stampDuty: stamp,
+      upfrontOther,
+      capex,
+      nOwners, shares, incomes,
+      useMedicare
+    });
+
+    const totalRentCash = rentMonthlySeries.reduce((a,b)=>a+b,0);
+    const totalRates = ratesYear * years;
+    const totalMaintIns = includeMaint ? (insYear + maintYear) * years : 0;
+
+    const nominal = equity
+      - totalInstalments
+      - stamp
+      - deposit
+      + totalRentCash
+      - totalRates
+      - totalMaintIns
+      - oppGainUpfront
+      - oppGainMonthly
+      - oppCostOffset
+      + taxBenefit
+      - cgt;
+
+    const real = nominal / Math.pow(1 + inflRate, years);
+
+    const advOffsetVsInvest = offset * (Math.pow(1 + rLoan, years) - 1) - offset * (Math.pow(1 + rOpp, years) - 1);
+
+    return {
+      payment: am.payment,
+      month1Interest,
+      totalInstalments,
+      interestPaid: am.interestPaid,
+      balance: am.balance,
+      equity,
+      nominal,
+      real,
+      oppGainUpfront,
+      oppGainMonthly,
+      oppCostOffset,
+      totalRentCash,
+      totalRates,
+      totalMaintIns,
+      salePrice,
+      sellCosts,
+      saleNet,
+      taxBenefit,
+      cgt,
+      advOffsetVsInvest
+    };
+  }
+
+  function setBreakdown(rows) {
+    const tb = document.getElementById("breakdown");
+    tb.innerHTML = "";
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      const td1 = document.createElement("td");
+      const td2 = document.createElement("td");
+      td1.textContent = r.label;
+      td2.textContent = fmt0(r.value);
+      tr.appendChild(td1);
+      tr.appendChild(td2);
+      tb.appendChild(tr);
+    }
+  }
+
+  function readInputs() {
+    return {
+      scenario: document.getElementById("scenario").value,
+      state: document.getElementById("state").value,
+      fhb: document.getElementById("fhb").checked,
+
+      price: Number(document.getElementById("price").value),
+      loan: Number(document.getElementById("loan").value),
+      years: Number(document.getElementById("years").value),
+      loanRate: Number(document.getElementById("loanRate").value),
+      term: Number(document.getElementById("term").value),
+      offset: Number(document.getElementById("offset").value),
+
+      maxOffset: Number(document.getElementById("maxOffset").value),
+
+      stamp: Number(document.getElementById("stamp").value),
+      upfrontOther: Number(document.getElementById("upfrontOther").value),
+
+      agentPct: Number(document.getElementById("agentPct").value),
+      sellFixed: Number(document.getElementById("sellFixed").value),
+      sell: document.getElementById("sell").value,
+
+      growth: Number(document.getElementById("growth").value),
+      rentWeek: Number(document.getElementById("rentWeek").value),
+      rentGrowth: Number(document.getElementById("rentGrowth").value),
+
+      ratesYear: Number(document.getElementById("ratesYear").value),
+      insYear: Number(document.getElementById("insYear").value),
+      maintYear: Number(document.getElementById("maintYear").value),
+      includeMaint: document.getElementById("includeMaint").checked,
+
+      vacancy: Number(document.getElementById("vacancy").value),
+      pmPct: Number(document.getElementById("pmPct").value),
+
+      oppRate: Number(document.getElementById("oppRate").value),
+      infl: Number(document.getElementById("infl").value),
+owners: document.getElementById("owners").value,
+      sharesInput: document.getElementById("shares").value,
+      income1: Number(document.getElementById("income1").value),
+      income2: Number(document.getElementById("income2").value),
+      medicare: document.getElementById("medicare").checked,
+      deprYear: Number(document.getElementById("deprYear").value),
+      capex: Number(document.getElementById("capex").value),
+    };
+  }
+
+
+  function updateOwnersUI() {
+    const n = Number(document.getElementById("owners").value);
+    const w = document.getElementById("income2Wrap");
+    if (w) w.classList.toggle("hidden", n !== 2);
+  }
+
+  
+  function setTaxInputsEnabled(enabled) {
+    const taxSec = document.getElementById("taxSection");
+    if (!taxSec) return;
+    const fields = taxSec.querySelectorAll("input, select, textarea, button");
+    fields.forEach(el => {
+      // Always keep the note visible and not disabled
+      if (el.id === "scenario" || el.id === "state") return;
+      // Don't disable the owners dropdown? Actually it's part of tax section; disable when not enabled.
+      el.disabled = !enabled;
+    });
+    // But keep the informational note enabled (it's not a form control anyway).
+  }
+function updateScenarioUI() {
+    const scenario = document.getElementById("scenario").value;
+    document.getElementById("rentLabel").textContent = scenario === "owner" ? "Rent avoided ($/week)" : "Rental income ($/week)";
+    const inv = (scenario === "invest");
+    const taxSec = document.getElementById("taxSection");
+    taxSec.classList.toggle("disabledSection", !inv);
+    document.getElementById("taxDisabledNote").classList.toggle("hidden", inv);
+    setTaxInputsEnabled(inv);
+    document.getElementById("invExtrasWrap").classList.toggle("hidden", !inv);
+    document.getElementById("invExtrasWrap2").classList.toggle("hidden", !inv);
+
+    const fhb = document.getElementById("fhb");
+    fhb.disabled = inv;
+    if (inv) fhb.checked = false;
+  }
+
+  function updateStampDutyAuto() {
+    const scenario = document.getElementById("scenario").value;
+    const state = document.getElementById("state").value;
+    const fhb = document.getElementById("fhb").checked;
+    const price = Number(document.getElementById("price").value);
+
+    if (!isFinite(price) || price <= 0) {
+      const tag = document.getElementById("dutyTag");
+      tag.textContent = (state === "OTHER") ? "manual" : "auto";
+      tag.style.background = "#eef";
+      return;
+    }
+
+    const duty = calcStampDuty({ state, price, scenario, fhb });
+    const tag = document.getElementById("dutyTag");
+
+    if (state === "OTHER" || duty === null) {
+      tag.textContent = "manual";
+      tag.style.background = "#eef";
+      return;
+    }
+    tag.textContent = "auto";
+    tag.style.background = "#e8fff0";
+    document.getElementById("stamp").value = Math.round(duty);
+  }
+
+  function profitAtPrice(priceTest, baseParams) {
+    const depositPct = (baseParams.price > 0) ? (Math.max(0, baseParams.price - baseParams.loan) / baseParams.price) : 0.1;
+    const loan = clamp(priceTest * (1 - depositPct), 0, priceTest);
+    const duty = calcStampDuty({ state: baseParams.state, price: priceTest, scenario: baseParams.scenario, fhb: baseParams.fhb });
+    const stamp = (duty === null) ? baseParams.stamp : duty;
+    const res = computeScenario({ ...baseParams, price: priceTest, loan, stamp });
+    return res.nominal;
+  }
+
+  function solveBreakEvenPrice(baseParams) {
+    const p0 = baseParams.price;
+    let lo = p0 * 0.6, hi = p0 * 1.4;
+    let fLo = profitAtPrice(lo, baseParams);
+    let fHi = profitAtPrice(hi, baseParams);
+
+    for (let k = 0; k < 8 && (fLo > 0 || fHi < 0); k++) {
+      if (fLo > 0) { hi = lo; fHi = fLo; lo *= 0.8; fLo = profitAtPrice(lo, baseParams); }
+      if (fHi < 0) { lo = hi; fLo = fHi; hi *= 1.2; fHi = profitAtPrice(hi, baseParams); }
+    }
+    if (!(fLo <= 0 && fHi >= 0)) return NaN;
+
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      const fMid = profitAtPrice(mid, baseParams);
+      if (fMid >= 0) hi = mid; else lo = mid;
+    }
+    return hi;
+  }
+
+  function profitAtGrowth(growthTest, baseParams) {
+    return computeScenario({ ...baseParams, growth: growthTest }).nominal;
+  }
+
+  function solveBreakEvenGrowth(baseParams) {
+    let lo = -2, hi = 12;
+    let fLo = profitAtGrowth(lo, baseParams);
+    let fHi = profitAtGrowth(hi, baseParams);
+
+    for (let k = 0; k < 10 && (fLo > 0 || fHi < 0); k++) {
+      if (fLo > 0) { hi = lo; lo -= 2; fLo = profitAtGrowth(lo, baseParams); }
+      if (fHi < 0) { lo = hi; hi += 2; fHi = profitAtGrowth(hi, baseParams); }
+    }
+    if (!(fLo <= 0 && fHi >= 0)) return NaN;
+
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      const fMid = profitAtGrowth(mid, baseParams);
+      if (fMid >= 0) hi = mid; else lo = mid;
+    }
+    return hi;
+  }
+
+  function optimizeOffset(baseParams) {
+    const maxOffset = Math.max(0, baseParams.maxOffset);
+    const step = Math.max(1000, Math.round(maxOffset / 50));
+    let best = { offset: 0, nominal: -Infinity };
+
+    for (let off = 0; off <= maxOffset; off += step) {
+      const res = computeScenario({ ...baseParams, offset: off });
+      if (res.nominal > best.nominal) best = { offset: off, nominal: res.nominal };
+    }
+    let lo = Math.max(0, best.offset - step), hi = Math.min(maxOffset, best.offset + step);
+    for (let i = 0; i < 25; i++) {
+      const m1 = lo + (hi - lo) / 3;
+      const m2 = hi - (hi - lo) / 3;
+      const r1 = computeScenario({ ...baseParams, offset: m1 }).nominal;
+      const r2 = computeScenario({ ...baseParams, offset: m2 }).nominal;
+      if (r1 < r2) lo = m1; else hi = m2;
+    }
+    const offBest = (lo + hi) / 2;
+    const resBest = computeScenario({ ...baseParams, offset: offBest });
+    return { bestOffset: offBest, bestNominal: resBest.nominal };
+  }
+
+  
+  function calculate() {
+    updateScenarioUI();
+    updateOwnersUI();
+    if (document.getElementById("state").value !== "OTHER") updateStampDutyAuto();
+    const params = readInputs();
+    const res = computeScenario(params);
+
+    document.getElementById("kRepay").textContent = fmt0(res.payment);
+    document.getElementById("kInterest").textContent = fmt0(res.month1Interest);
+    document.getElementById("kBal").textContent = fmt0(res.balance);
+    document.getElementById("kEndPrice").textContent = fmt0(res.salePrice);
+    document.getElementById("kEq").textContent = fmt0(res.equity);
+
+    document.getElementById("kTax").textContent = fmt0(res.taxBenefit);
+    document.getElementById("kCgt").textContent = fmt0(res.cgt);
+
+    document.getElementById("kNom").textContent = fmt0(res.nominal);
+    const nominalNoOpp = res.nominal + (res.oppGainUpfront||0) + (res.oppGainMonthly||0) + (res.oppCostOffset||0);
+    const elNoOpp = document.getElementById("kNomNoOpp");
+    if (elNoOpp) elNoOpp.textContent = fmt0(nominalNoOpp);
+    document.getElementById("kReal").textContent = fmt0(res.real);
+
+    document.getElementById("kOffsetAdv").textContent = fmt0(res.advOffsetVsInvest);
+
+    const opt = optimizeOffset(params);
+    document.getElementById("kBestOffset").textContent = fmt0(opt.bestOffset) + " (profit " + fmt0(opt.bestNominal) + ")";
+
+    const bep = solveBreakEvenPrice(params);
+    document.getElementById("kBEP").textContent = fmt0(bep);
+
+    const beg = solveBreakEvenGrowth(params);
+    document.getElementById("kBEG").textContent = isFinite(beg) ? (beg.toFixed(2) + "%") : "–%";
+setBreakdown([
+      { label: "Total equity (end)", value: res.equity },
+      { label: "− Total instalments paid", value: -res.totalInstalments },
+      { label: "− Stamp duty", value: -params.stamp },
+      { label: "− Initial payment (deposit)", value: -(Math.max(0, params.price - params.loan)) },
+      { label: "+ Rent avoided / rental income", value: res.totalRentCash },
+      { label: "− Council rates", value: -res.totalRates },
+      { label: "− Maintenance + insurance", value: -res.totalMaintIns },
+      { label: "+ Tax benefit (rental)", value: res.taxBenefit },
+      { label: "− CGT payable", value: -res.cgt },
+      { label: "− Opportunity gain on upfront cash", value: -res.oppGainUpfront },
+      { label: "− Opportunity gain on monthly differences", value: -res.oppGainMonthly },
+      { label: "− Opportunity cost of offset cash", value: -res.oppCostOffset },
+      { label: "= Nominal profit", value: res.nominal },
+    ]);
+
+
+    // Tax breakdown table
+    const tb = document.getElementById("taxBreakdown");
+    if (tb) {
+      tb.innerHTML = "";
+      const show = (params.scenario === "invest" && res.taxPerYear && res.taxPerYear.length);
+      document.getElementById("taxBreakdownWrap").classList.toggle("hidden", !show);
+      if (show) {
+        res.taxPerYear.forEach(r => {
+          const tr = document.createElement("tr");
+          const cells = [
+            r.year,
+            fmt0(r.rent),
+            fmt0(r.interest),
+            fmt0(r.otherCosts),
+            fmt0(r.net),
+            fmt0(r.owner1),
+            fmt0(r.owner2),
+            fmt0(r.total),
+          ];
+          cells.forEach((c, idx) => {
+            const td = document.createElement(idx === 0 ? "td" : "td");
+            td.textContent = c;
+            td.style.textAlign = (idx === 0 ? "left" : "right");
+            tr.appendChild(td);
+          });
+          tb.appendChild(tr);
+        });
+      }
+    }
+
+  }
+
+  function resetToDefaults() { location.reload(); }
+
+  document.getElementById("calcBtn").addEventListener("click", calculate);
+  document.getElementById("resetBtn").addEventListener("click", resetToDefaults);
+
+  ["scenario","state","fhb","price"].forEach(id => {
+    document.getElementById(id).addEventListener("change", () => { updateScenarioUI(); updateStampDutyAuto(); });
+  });
+  document.getElementById("price").addEventListener("input", () => updateStampDutyAuto());
+  document.getElementById("owners").addEventListener("change", () => updateOwnersUI());
+
+  updateScenarioUI();
+  updateOwnersUI();
+  updateStampDutyAuto();
+  calculate();
+</script>
+</body>
+</html>
