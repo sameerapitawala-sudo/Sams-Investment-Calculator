@@ -548,7 +548,7 @@
         .slice(y*12, Math.min((y+1)*12, months))
         .reduce((a,b)=>a+b,0);
 
-      const otherCosts = baseCosts + dep + vac + pm;
+      const otherCosts = baseCosts + dep - vac - pm;
       const net = annualRent - (interestThisYear + otherCosts);
 
       const ownerBenefits = [];
